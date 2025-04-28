@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Formulário com Planilha</title>
+  <style>
+    /* Estilo simples para a tabela */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
+    }
+    /* Estilo do botão */
+    #btnInserir {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #btnInserir:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Formulário Simples</h1>
+  
+  <form>
+    <label for="nome">Nome:</label>
+    <input type="text" id="nome" name="nome"><br><br>
+
+    <label for="lista">Escolha uma opção:</label>
+    <select id="lista" name="lista">
+      <option>Carregando...</option>
+    </select><br><br>
+
+    <label for="lista2">Outra opção:</label>
+    <select id="lista2" name="lista2">
+      <option>Carregando...</option>
+    </select><br><br>
+
+    <button type="button" id="btnInserir">Inserir</button>
+  </form>
+
+  <!-- Aqui aparecerá a lista de todos os dados -->
+  <h2>Lista completa de registros</h2>
+  <table id="tabela-dados">
+    <thead>
+      <tr>
+        <th>Coluna A</th>
+        <th>Coluna B</th>
+        <th>Coluna C</th>
+        <th>Coluna D</th>
+        <th>Coluna E</th>
+        <th>Coluna F</th>
+        <th>Coluna G</th>
+        <th>Coluna H</th>
+        <th>Coluna I</th>
+        <th>Coluna J</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Dados da planilha aparecerão aqui -->
+    </tbody>
+  </table>
+
+  <script>
+    const sheetID = '1v1bXemZE_vOyW1HxJY2au-zxjbLyPGFuILU19TUZSYI';
+    const sheetName = 'dados2';
+    const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${sheetName}`;
+
+    let dadosCompletos = [];
+
+    fetch(url)
+      .then(res => res.text())
+      .then(text => {
+        const json = JSON.parse(text.substr(47).slice(0, -2));
+        const rows = json.table.rows;
+
+        dadosCompletos = rows.map(row => ({
+          colA: row.c[0]?.v || '',
+          colB: row.c[1]?.v || '',
+          colC: row.c[2]?.v || '',
+          colD: row.c[3]?.v || '',
+          colE: row.c[4]?.v || '',
+          colF: row.c[5]?.v || '',
+          colG: row.c[6]?.v || '',
+          colH: row.c[7]?.v || '',
+          colI: row.c[8]?.v || '',
+          colJ: row.c[9]?.v || ''
+        }));
+
+        // Preenche selects
+        const selectA = document.getElementById('lista');
+        const selectB = document.getElementById('lista2');
+        selectA.innerHTML = '';
+        selectB.innerHTML = '';
+        dadosCompletos.forEach(item => {
+          const optionA = document.createElement('option');
+          optionA.textContent = item.colA;
+          optionA.value = item.colA;
+          selectA.appendChild(optionA);
+
+          const optionB = document.createElement('option');
+          optionB.textContent = item.colB;
+          optionB.value = item.colB;
+          selectB.appendChild(optionB);
+        });
+
+        // Preenche a tabela com os dados A-J
+        const tabela = document.querySelector('#tabela-dados tbody');
+        tabela.innerHTML = '';
+        dadosCompletos.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.colA}</td>
+            <td>${item.colB}</td>
+            <td>${item.colC}</td>
+            <td>${item.colD}</td>
+            <td>${item.colE}</td>
+            <td>${item.colF}</td>
+            <td>${item.colG}</td>
+            <td>${item.colH}</td>
+            <td>${item.colI}</td>
+            <td>${item.colJ}</td>
+          `;
+          tabela.appendChild(tr);
+        });
+
+        // Seleciona o último registro da coluna E
+        const ultimaLinha = dadosCompletos[dadosCompletos.length - 1];
+        const ultimaCelulaE = ultimaLinha.colE;
+        if (ultimaCelulaE) {
+          // Foco na célula abaixo do último registro na coluna E
+          document.querySelector('#nome').focus();
+        }
+      })
+      .catch(err => {
+        console.error('Erro ao carregar planilha:', err);
+        document.getElementById('lista').innerHTML = '<option>Erro ao carregar</option>';
+        document.getElementById('lista2').innerHTML = '<option>Erro ao carregar</option>';
+      });
+
+    // Ao clicar no botão "Inserir"
+    document.getElementById('btnInserir').addEventListener('click', () => {
+      const nome = document.getElementById('nome').value;
+      const dataAtual = new Date().toLocaleDateString();
+
+      if (nome && dadosCompletos.length > 0) {
+        // Cria uma nova linha para a tabela com os dados
+        const novaLinha = {
+          colA: '', // Pode ser alterado para outro valor conforme necessário
+          colB: '',
+          colC: nome,
+          colD: '',
+          colE: dataAtual, // Insere a data atual na coluna E
+          colF: nome, // Insere o nome na coluna F
+          colG: '',
+          colH: '',
+          colI: '',
+          colJ: ''
+        };
+
+        // Atualiza os dadosCompletos (para exibição na tabela)
+        dadosCompletos.push(novaLinha);
+
+        // Atualiza a tabela com a nova linha
+        const tabela = document.querySelector('#tabela-dados tbody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${novaLinha.colA}</td>
+          <td>${novaLinha.colB}</td>
+          <td>${novaLinha.colC}</td>
+          <td>${novaLinha.colD}</td>
+          <td>${novaLinha.colE}</td>
+          <td>${novaLinha.colF}</td>
+          <td>${novaLinha.colG}</td>
+          <td>${novaLinha.colH}</td>
+          <td>${novaLinha.colI}</td>
+          <td>${novaLinha.colJ}</td>
+        `;
+        tabela.appendChild(tr);
+      }
+    });
+  </script>
+</body>
+</html>
