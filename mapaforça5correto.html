@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório de Serviço</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label, input, textarea, select, button { display: block; margin: 10px 0; width: 100%; max-width: 600px; }
+    table { border-collapse: collapse; width: 100%; max-width: 600px; margin: 20px 0; }
+    table, th, td { border: 1px solid black; padding: 8px; text-align: left; }
+    #resultado { white-space: pre-wrap; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; }
+    .confirmacao { font-weight: bold; color: green; margin-top: 5px; }
+  </style>
+</head>
+<body>
+
+<h2>Formulário para Mapa Força</h2>
+
+<label>Data:</label>
+<input type="date" id="data">
+
+<label>Turno:</label>
+<input type="text" id="turno" value="24 Horas (08h00 às 08h00)">
+
+<label>Comandante da UPM:</label>
+<input type="text" id="comandante" value="1° SGT PM BRUNO">
+
+<h3>Equipe de Serviço</h3>
+<table id="tabelaEquipe">
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>QRA</th>
+      <th>Posto/Graduação</th>
+      <th>Telefone</th>
+    </tr>
+  </thead>
+  <tbody id="corpoTabela"></tbody>
+</table>
+
+<label>Adicionar Policial:</label>
+<select id="selecaoNome">
+  <option value="">Selecione um policial</option>
+</select>
+<button onclick="adicionarPolicial()">Adicionar à VTR</button>
+
+<h3>Jornada Extraordinária</h3>
+<table id="tabelaExtra">
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>QRA</th>
+      <th>Posto/Graduação</th>
+      <th>Telefone</th>
+    </tr>
+  </thead>
+  <tbody id="corpoExtra"></tbody>
+</table>
+<label>Adicionar Policial:</label>
+<select id="selecaoExtra">
+  <option value="">Selecione um policial</option>
+</select>
+<button onclick="adicionarPolicialExtra()">Adicionar à Extra</button>
+<label>Início:</label>
+<input type="time" id="extraInicio">
+<label>Fim:</label>
+<input type="time" id="extraFim">
+
+<h3>Patrulhamento Rural</h3>
+<table id="tabelaRural">
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>QRA</th>
+      <th>Posto/Graduação</th>
+      <th>Telefone</th>
+    </tr>
+  </thead>
+  <tbody id="corpoRural"></tbody>
+</table>
+<label>Adicionar Policial:</label>
+<select id="selecaoRural">
+  <option value="">Selecione um policial</option>
+</select>
+<button onclick="adicionarPolicialRural()">Adicionar à Rural</button>
+<label>Data de Início:</label>
+<input type="date" id="ruralDataInicio">
+<label>Hora de Início:</label>
+<input type="time" id="ruralHoraInicio">
+<label>Data de Fim:</label>
+<input type="date" id="ruralDataFim">
+<label>Hora de Fim:</label>
+<input type="time" id="ruralHoraFim">
+
+<h3>Linhas:</h3>
+<input type="text" id="linhas" value="190, 981700447">
+
+<h3>Operação:</h3>
+<textarea id="operacao" rows="3">*OPERAÇÃO TOLERÂNCIA ZERO ÀS FACÇÕES CRIMINOSAS*</textarea>
+
+<h3>Cartão Programa</h3>
+<textarea id="cartao" rows="5">
+ZONA URBANA: Patrulhamento central - Área comercial e bancária, BAIRROS: Angelito Barbosa, Boa Esperança, Recanto dos Pássaros e patrulhamento nos bairros adjacentes.
+ZONA RURAL: Patrulhamento Rural, rondas e visitas técnicas.
+</textarea>
+
+<br>
+<button onclick="gerarRelatorio()">Gerar Relatório</button>
+<h3>Relatório Gerado:</h3>
+<div id="resultado"></div>
+<button onclick="copiarRelatorio()">📋 Copiar Relatório</button>
+<p id="confirmacaoCopia" class="confirmacao"></p>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  const campoData = document.getElementById("data");
+  if (!campoData.value) {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    campoData.value = `${ano}-${mes}-${dia}`;
+  }
+
+  popularSelect();
+  popularSelectExtraRural();
+});
+
+const policiais = [
+  { nome: "1 SGT PM BRUNO", qra: "BRUNO", posto: "1 SGT PM", telefone: "65 99244-6525" },
+  { nome: "2 SGT PM BROLEZI", qra: "BROLEZI", posto: "2 SGT PM", telefone: "65 99244-6525" },
+  { nome: "2 SGT PM WEBER", qra: "WEBER", posto: "2 SGT PM", telefone: "65 99244-6525" },
+  { nome: "3 SGT PM CAMPOS", qra: "CAMPOS", posto: "3 SGT PM", telefone: "65 99244-6525" },
+  { nome: "CB PM ROBERT", qra: "ROBERT", posto: "CB PM", telefone: "65 99961-5050" },
+  { nome: "CB PM JOSIMAR", qra: "JOSIIMAR", posto: "CB PM", telefone: "65 99961-5050" },
+  { nome: "CB R. SOUZA", qra: "R.SOUZA", posto: "CB R", telefone: "65 98888-8888" },
+  { nome: "CB PM SOUZA", qra: "SOUZA", posto: "CB PM", telefone: "65 99961-5050" },
+  { nome: "SD THIAGO", qra: "THIAGO", posto: "SD", telefone: "65 97777-7777" },
+  { nome: "SD PM BRUNA", qra: "BRUNA", posto: "SD PM", telefone: "65 99902-9978" },
+  { nome: "SD PM LOBO", qra: "LOBO", posto: "SD PM", telefone: "65 99902-9978" },
+  { nome: "SD PM DOUGLAS", qra: "DOUGLAS", posto: "SD PM", telefone: "65 99902-9978" }
+];
+
+function popularSelect() {
+  const select = document.getElementById("selecaoNome");
+  policiais.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.nome;
+    opt.textContent = p.nome;
+    select.appendChild(opt);
+  });
+}
+
+function popularSelectExtraRural() {
+  const selectExtra = document.getElementById("selecaoExtra");
+  const selectRural = document.getElementById("selecaoRural");
+
+  policiais.forEach(p => {
+    const opt1 = document.createElement("option");
+    opt1.value = p.nome;
+    opt1.textContent = p.nome;
+    selectExtra.appendChild(opt1);
+
+    const opt2 = document.createElement("option");
+    opt2.value = p.nome;
+    opt2.textContent = p.nome;
+    selectRural.appendChild(opt2);
+  });
+}
+
+function adicionarPolicial() {
+  const nome = document.getElementById("selecaoNome").value;
+  if (!nome) return;
+  const p = policiais.find(pol => pol.nome === nome);
+  const linha = `<tr><td>${p.nome}</td><td>${p.qra}</td><td>${p.posto}</td><td>${p.telefone}</td></tr>`;
+  document.getElementById("corpoTabela").innerHTML += linha;
+}
+
+function adicionarPolicialExtra() {
+  const nome = document.getElementById("selecaoExtra").value;
+  if (!nome) return;
+  const p = policiais.find(pol => pol.nome === nome);
+  const linha = `<tr><td>${p.nome}</td><td>${p.qra}</td><td>${p.posto}</td><td>${p.telefone}</td></tr>`;
+  document.getElementById("corpoExtra").innerHTML += linha;
+}
+
+function adicionarPolicialRural() {
+  const nome = document.getElementById("selecaoRural").value;
+  if (!nome) return;
+  const p = policiais.find(pol => pol.nome === nome);
+  const linha = `<tr><td>${p.nome}</td><td>${p.qra}</td><td>${p.posto}</td><td>${p.telefone}</td></tr>`;
+  document.getElementById("corpoRural").innerHTML += linha;
+}
+
+function gerarRelatorio() {
+  const data = document.getElementById("data").value;
+  const turno = document.getElementById("turno").value;
+  const comandante = document.getElementById("comandante").value;
+  const linhas = document.getElementById("linhas").value;
+  const operacao = document.getElementById("operacao").value;
+  const cartao = document.getElementById("cartao").value;
+  const diaSemana = new Date(data).toLocaleDateString("pt-BR", { weekday: "long" });
+
+  function extrairTextoTabela(id) {
+    let texto = "";
+    document.querySelectorAll(`#${id} tr`).forEach(linha => {
+      const colunas = linha.querySelectorAll("td");
+      if (colunas.length) {
+        texto += `${colunas[0].textContent}\n${colunas[3].textContent}\n`;
+      }
+    });
+    return texto.trim();
+  }
+
+  const equipeTexto = extrairTextoTabela("corpoTabela");
+  const extraTexto = extrairTextoTabela("corpoExtra");
+  const ruralTexto = extrairTextoTabela("corpoRural");
+
+  const extraInicio = document.getElementById("extraInicio").value;
+  const extraFim = document.getElementById("extraFim").value;
+
+  const ruralDataInicio = document.getElementById("ruralDataInicio").value;
+  const ruralHoraInicio = document.getElementById("ruralHoraInicio").value;
+  const ruralDataFim = document.getElementById("ruralDataFim").value;
+  const ruralHoraFim = document.getElementById("ruralHoraFim").value;
+
+  const textoFinal = `*NPM DENISE*
+Data: ${new Date(data).toLocaleDateString("pt-BR")} (${diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1)})
+Turno ${turno}
+
+------MAPA FORÇA------
+
+CMTE DA UPM: ${comandante}
+
+__VTR 01 SPC-7C90__
+Graduado de Dia
+
+${equipeTexto}
+
+Jornada Extraordinária das ${extraInicio} às ${extraFim}
+${extraTexto}
+
+Patrulhamento Rural:
+${ruralTexto}
+De ${new Date(ruralDataInicio).toLocaleDateString("pt-BR")} ${ruralHoraInicio}
+até ${new Date(ruralDataFim).toLocaleDateString("pt-BR")} ${ruralHoraFim}
+
+Linhas: ${linhas}
+
+${operacao}
+
+--------------------------------------
+CARTÃO PROGRAMA
+
+${cartao}
+
+*POLICIA MILITAR, SERVINDO E PROTEGENDO*`;
+
+  document.getElementById("resultado").textContent = textoFinal;
+}
+
+function copiarRelatorio() {
+  const texto = document.getElementById("resultado").textContent;
+  if (!texto.trim()) {
+    alert("⚠️ Primeiro gere o relatório antes de copiar.");
+    return;
+  }
+
+  navigator.clipboard.writeText(texto).then(() => {
+    document.getElementById("confirmacaoCopia").textContent =
+      "✅ O Mapa Força foi copiado e está pronto para ser colado no grupo da unidade militar.";
+  }).catch(err => {
+    alert("Erro ao copiar texto: " + err);
+  });
+}
+</script>
+</body>
+</html>
